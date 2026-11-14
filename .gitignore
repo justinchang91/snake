@@ -1,2 +1,4 @@
 snake
+ncurses_demo
+ncurses_demo.c
 *.o

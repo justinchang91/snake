@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <ncurses.h>
 #include <unistd.h>
 
 #define NUMROWS 10
@@ -9,15 +9,15 @@ void print_board(int snake_pos_x, int snake_pos_y)
     for (int r = 0; r < NUMROWS; r++) {
         for (int c = 0; c < NUMCOLS; c++) {
             if (r == snake_pos_y && c == snake_pos_x) {
-                printf("@ ");
+                printw("@ ");
             }
             else {
-                printf(". ");
+                printw(". ");
             }
         }
-        printf("\n");
+        printw("\n");
     }
-    fflush(stdout);
+    refresh();
 }
 
 int in_bounds(int snake_pos_x, int snake_pos_y) {
@@ -27,13 +27,20 @@ int in_bounds(int snake_pos_x, int snake_pos_y) {
 int main(void)
 {
     int snake_pos_x = 5, snake_pos_y = 5;
+    initscr();
+    cbreak();
+    noecho();
+    keypad(stdscr, TRUE);       /* We get F1, F2, arrow keys etc..                           */
 
     while (in_bounds(snake_pos_x, snake_pos_y)) {
-        printf("\033[H\033[2J");   /* move cursor to top-left, clear screen */
+        move(0, 0);  // Reset the cursor to top left
         print_board(snake_pos_x, snake_pos_y);
         usleep(200000);
         snake_pos_x++;
     }
+
+    getch();
+    endwin();
 
     return 0;
 }
