@@ -53,6 +53,12 @@ void update_direction(int *dx, int *dy, int ch)
     }
 }
 
+void move_snake(int *snake_pos_x, int *snake_pos_y, int dx, int dy)
+{
+    *snake_pos_x += dx;
+    *snake_pos_y += dy;
+}
+
 int main(void)
 {
     int snake_pos_x = 5, snake_pos_y = 5;
@@ -65,16 +71,18 @@ int main(void)
     keypad(stdscr, TRUE);
     nodelay(stdscr, TRUE);  // Make getch() non blocking. In no-delay mode, if no input is waiting, the value ERR is returned
 
-    while (in_bounds(snake_pos_x, snake_pos_y)) {
+    while (1) {
         ch = getch();
         if (ch != ERR) {
             update_direction(&dx, &dy, ch);
         }
+        move_snake(&snake_pos_x, &snake_pos_y, dx, dy);
+        if (!in_bounds(snake_pos_x, snake_pos_y)) {
+            break;
+        }
         move(0, 0);  // Reset the cursor to top left
         print_board(snake_pos_x, snake_pos_y);
         usleep(200000);
-        snake_pos_x += dx;
-        snake_pos_y += dy;
     }
 
     mvprintw(NUMROWS + 2, 0, "Game over! Press any key to exit.");
