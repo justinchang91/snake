@@ -1,5 +1,3 @@
-#include <stdint.h>
-
 /* Rules 
 - Empty: H == T
 - Full: Next H position == T
@@ -11,14 +9,14 @@
 
 /* Storing coordinates X, Y which are both uint8_t */
 typedef struct {
-    uint8_t x;
-    uint8_t y;
+    int x;
+    int y;
 } coordinate_t;
 
 typedef struct {
     coordinate_t buf[RB_SIZE];
-    uint8_t head;  // no need for volatile. No ISR reading it
-    uint8_t tail;
+    int head;  // no need for volatile. No ISR reading it
+    int tail;
 } snake_buffer_t;
 
 int sb_put(snake_buffer_t *sb, coordinate_t pos);

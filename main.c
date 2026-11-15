@@ -5,14 +5,29 @@
 #define NUMROWS 10
 #define NUMCOLS 10
 
-void print_board(int snake_pos_x, int snake_pos_y, int food_pos_x, int food_pos_y)
+int is_snake(snake_buffer_t *sb, int x, int y) 
+{
+    for (int i = sb->tail; i != sb->head; i = (i + 1) % RB_SIZE) {
+        if (sb->buf[i].x == x && sb->buf[i].y == y) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int is_food(coordinate_t food_pos, int x, int y)
+{
+    return (y == food_pos.y && x == food_pos.x);
+}
+
+void print_board(snake_buffer_t *sb, coordinate_t food_pos)
 {
     for (int r = 0; r < NUMROWS; r++) {
         for (int c = 0; c < NUMCOLS; c++) {
-            if (r == snake_pos_y && c == snake_pos_x) {
+            if (is_snake(sb, c, r)) {
                 printw("@ ");
             }
-            else if (r == food_pos_y && c == food_pos_x) {
+            else if (is_food(food_pos, c, r)) {
                 printw("* ");
             }
             else {
@@ -24,9 +39,14 @@ void print_board(int snake_pos_x, int snake_pos_y, int food_pos_x, int food_pos_
     refresh();
 }
 
-int in_bounds(int snake_pos_x, int snake_pos_y) 
+int in_bounds(const coordinate_t snake_head_pos) 
 {
-    return snake_pos_x > -1 && snake_pos_x < NUMCOLS && snake_pos_y > -1 && snake_pos_y < NUMROWS;
+    return snake_head_pos.x > -1 && snake_head_pos.x < NUMCOLS && snake_head_pos.y > -1 && snake_head_pos.y < NUMROWS;
+}
+
+int food_is_touched(const coordinate_t snake_head_pos, const coordinate_t food_pos)
+{
+    return snake_head_pos.x == food_pos.x && snake_head_pos.y == food_pos.y;
 }
 
 void update_direction(int *dx, int *dy, int ch) 
@@ -75,7 +95,7 @@ int main(void)
     snake_buffer_t sb = {.head=0, .tail=0};
     sb_put(&sb, start_head_pos);
 
-    int food_pos_x = 8, food_pos_y = 8;
+    coordinate_t food_pos = {.x=8, .y=8};
     int dx = 0, dy = 0;
     int ch;
 
@@ -93,11 +113,14 @@ int main(void)
         move_snake(&sb, dx, dy);
         coordinate_t snake_head_pos;
         sb_peek_head(&sb, &snake_head_pos);
-        if (!in_bounds(snake_head_pos.x, snake_head_pos.y)) {
+        if (!in_bounds(snake_head_pos)) {
             break;
         }
+        if (food_is_touched(snake_head_pos, food_pos)) {
+            sb_put(&sb, snake_head_pos);
+        }
         move(0, 0);  // Reset the cursor to top left
-        print_board(snake_head_pos.x, snake_head_pos.y, food_pos_x, food_pos_y);
+        print_board(&sb, food_pos);
         usleep(200000);
     }
 
