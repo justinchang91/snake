@@ -6,6 +6,7 @@
 
 #define NUMROWS 10
 #define NUMCOLS 10
+#define MAX_SCORE (NUMROWS * NUMCOLS - 1)  // Max number of food eaten
 
 #define GOING_DOWN (*dx == 0 && *dy == 1)
 #define GOING_UP (*dx == 0 && *dy == -1)
@@ -63,8 +64,13 @@ void print_score(int *score) {
     mvprintw(NUMROWS + 1, 0, "Score: %d", *score);
 }
 
-void print_game_over() {
-    mvprintw(NUMROWS + 2, 0, "Game over! Press any key to exit.");
+void print_game_over(int *score) {
+    if (*score == MAX_SCORE) {
+        mvprintw(NUMROWS + 2, 0, "You won! Press any key to exit.");
+    } else {
+        mvprintw(NUMROWS + 2, 0, "Game over! Press any key to exit.");
+    }
+    
 }
 
 int in_bounds(const coordinate_t snake_head_pos) 
@@ -118,7 +124,7 @@ void move_snake(snake_buffer_t *sb, coordinate_t *prev_tail_pos, int *prev_tail_
 
 int main(void)
 {
-    coordinate_t start_head_pos = {.x=5, .y=5};
+    coordinate_t start_head_pos = {.x=NUMCOLS / 2, .y=NUMROWS / 2};
     snake_buffer_t sb = {.head=0, .tail=0};
     coordinate_t prev_tail_pos;
     int prev_tail_index = sb.tail;
@@ -139,8 +145,7 @@ int main(void)
     keypad(stdscr, TRUE);
     nodelay(stdscr, TRUE);  // Make getch() non blocking. In no-delay mode, if no input is waiting, the value ERR is returned
 
-    while (1) {
-        print_score(&score);
+    while (score < MAX_SCORE) {
         ch = getch();
         if (ch != ERR) {
             update_direction(&dx, &dy, ch, &sb);
@@ -154,15 +159,18 @@ int main(void)
         if (food_is_touched(snake_head_pos, food_pos)) {
             score++;
             sb_eat(&sb, prev_tail_pos, prev_tail_index);
-            update_food_pos(&food_pos, &sb);
+            if (score < MAX_SCORE) {
+                update_food_pos(&food_pos, &sb);
+            }
         }
+        print_score(&score);
         move(0, 0);  // Reset the cursor to top left
         print_board(&sb, food_pos);
         refresh();
         usleep(200000);
     }
 
-    print_game_over();
+    print_game_over(&score);
     refresh();
 
     timeout(-1);
