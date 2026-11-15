@@ -57,7 +57,14 @@ void print_board(const snake_buffer_t *sb, const coordinate_t food_pos)
         }
         printw("\n");
     }
-    refresh();
+}
+
+void print_score(int *score) {
+    mvprintw(NUMROWS + 1, 0, "Score: %d", *score);
+}
+
+void print_game_over() {
+    mvprintw(NUMROWS + 2, 0, "Game over! Press any key to exit.");
 }
 
 int in_bounds(const coordinate_t snake_head_pos) 
@@ -123,14 +130,17 @@ int main(void)
 
     int dx = 0, dy = 0;
     int ch;
+    int score = 0;
 
     initscr();
     cbreak();
     noecho();
+    curs_set(0);
     keypad(stdscr, TRUE);
     nodelay(stdscr, TRUE);  // Make getch() non blocking. In no-delay mode, if no input is waiting, the value ERR is returned
 
     while (1) {
+        print_score(&score);
         ch = getch();
         if (ch != ERR) {
             update_direction(&dx, &dy, ch, &sb);
@@ -142,15 +152,17 @@ int main(void)
             break;
         }
         if (food_is_touched(snake_head_pos, food_pos)) {
+            score++;
             sb_eat(&sb, prev_tail_pos, prev_tail_index);
             update_food_pos(&food_pos, &sb);
         }
         move(0, 0);  // Reset the cursor to top left
         print_board(&sb, food_pos);
+        refresh();
         usleep(200000);
     }
 
-    mvprintw(NUMROWS + 2, 0, "Game over! Press any key to exit.");
+    print_game_over();
     refresh();
 
     timeout(-1);
