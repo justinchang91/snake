@@ -19,6 +19,7 @@ typedef struct {
     int tail;
 } snake_buffer_t;
 
-int sb_put(snake_buffer_t *sb, coordinate_t pos);
-int sb_get(snake_buffer_t *sb, coordinate_t *pos);
+int sb_put_head(snake_buffer_t *sb, coordinate_t pos);
+int sb_get_tail(snake_buffer_t *sb, coordinate_t *prev_tail_pos, int *prev_tail_index) ;
 int sb_peek_head(const snake_buffer_t *sb, coordinate_t *pos);
+int sb_eat(snake_buffer_t *sb, coordinate_t prev_tail_pos, int prev_tail_index) ;

@@ -77,23 +77,24 @@ void update_direction(int *dx, int *dy, int ch)
     }
 }
 
-void move_snake(snake_buffer_t *sb, int dx, int dy)
+void move_snake(snake_buffer_t *sb, coordinate_t *prev_tail_pos, int *prev_tail_index, int dx, int dy)
 {
     // Use the ring buffer
     // When snake moves, it's a put for the new head coordinate, followed by a get for the tail
     coordinate_t head_pos;
     sb_peek_head(sb, &head_pos);
     coordinate_t next_head_pos = {.x=head_pos.x + dx, .y=head_pos.y + dy};
-    sb_put(sb, next_head_pos);
-    coordinate_t tail_pos;
-    sb_get(sb, &tail_pos);
+    sb_put_head(sb, next_head_pos);
+    sb_get_tail(sb, prev_tail_pos, prev_tail_index);
 }
 
 int main(void)
 {
     coordinate_t start_head_pos = {.x=5, .y=5};
     snake_buffer_t sb = {.head=0, .tail=0};
-    sb_put(&sb, start_head_pos);
+    coordinate_t prev_tail_pos;
+    int prev_tail_index = sb.tail;
+    sb_put_head(&sb, start_head_pos);
 
     coordinate_t food_pos = {.x=8, .y=8};
     int dx = 0, dy = 0;
@@ -110,14 +111,14 @@ int main(void)
         if (ch != ERR) {
             update_direction(&dx, &dy, ch);
         }
-        move_snake(&sb, dx, dy);
+        move_snake(&sb, &prev_tail_pos, &prev_tail_index, dx, dy);
         coordinate_t snake_head_pos;
         sb_peek_head(&sb, &snake_head_pos);
         if (!in_bounds(snake_head_pos)) {
             break;
         }
         if (food_is_touched(snake_head_pos, food_pos)) {
-            sb_put(&sb, snake_head_pos);
+            sb_eat(&sb, prev_tail_pos, prev_tail_index);
         }
         move(0, 0);  // Reset the cursor to top left
         print_board(&sb, food_pos);
