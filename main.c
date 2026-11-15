@@ -1,11 +1,13 @@
 #include <ncurses.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <time.h>
 #include "ring_buffer.h"
 
 #define NUMROWS 10
 #define NUMCOLS 10
 
-int is_snake(snake_buffer_t *sb, int x, int y) 
+int is_snake(const snake_buffer_t *sb, const int x, const int y) 
 {
     for (int i = sb->tail; i != sb->head; i = (i + 1) % RB_SIZE) {
         if (sb->buf[i].x == x && sb->buf[i].y == y) {
@@ -15,12 +17,12 @@ int is_snake(snake_buffer_t *sb, int x, int y)
     return 0;
 }
 
-int is_food(coordinate_t food_pos, int x, int y)
+int is_food(const coordinate_t food_pos, const int x, const int y)
 {
     return (y == food_pos.y && x == food_pos.x);
 }
 
-void print_board(snake_buffer_t *sb, coordinate_t food_pos)
+void print_board(const snake_buffer_t *sb, const coordinate_t food_pos)
 {
     for (int r = 0; r < NUMROWS; r++) {
         for (int c = 0; c < NUMCOLS; c++) {
@@ -49,7 +51,7 @@ int food_is_touched(const coordinate_t snake_head_pos, const coordinate_t food_p
     return snake_head_pos.x == food_pos.x && snake_head_pos.y == food_pos.y;
 }
 
-void update_direction(int *dx, int *dy, int ch) 
+void update_direction(int *dx, int *dy, const int ch) 
 {
     switch (ch) {
         case 'w':
@@ -77,6 +79,12 @@ void update_direction(int *dx, int *dy, int ch)
     }
 }
 
+void update_food_pos(coordinate_t *food_pos) 
+{
+    food_pos->x = rand() % NUMCOLS;
+    food_pos->y = rand() % NUMROWS;
+}
+
 void move_snake(snake_buffer_t *sb, coordinate_t *prev_tail_pos, int *prev_tail_index, int dx, int dy)
 {
     // Use the ring buffer
@@ -96,7 +104,10 @@ int main(void)
     int prev_tail_index = sb.tail;
     sb_put_head(&sb, start_head_pos);
 
-    coordinate_t food_pos = {.x=8, .y=8};
+    srand(time(NULL));
+    coordinate_t food_pos;
+    update_food_pos(&food_pos);
+
     int dx = 0, dy = 0;
     int ch;
 
@@ -119,6 +130,7 @@ int main(void)
         }
         if (food_is_touched(snake_head_pos, food_pos)) {
             sb_eat(&sb, prev_tail_pos, prev_tail_index);
+            update_food_pos(&food_pos);
         }
         move(0, 0);  // Reset the cursor to top left
         print_board(&sb, food_pos);
