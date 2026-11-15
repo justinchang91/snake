@@ -7,6 +7,11 @@
 #define NUMROWS 10
 #define NUMCOLS 10
 
+#define GOING_DOWN (*dx == 0 && *dy == 1)
+#define GOING_UP (*dx == 0 && *dy == -1)
+#define GOING_LEFT (*dx == -1 && *dy == 0)
+#define GOING_RIGHT (*dx == 1 && *dy == 0)
+
 int is_snake(const snake_buffer_t *sb, const int x, const int y) 
 {
     for (int i = sb->tail; i != sb->head; i = (i + 1) % RB_SIZE) {
@@ -51,31 +56,23 @@ int food_is_touched(const coordinate_t snake_head_pos, const coordinate_t food_p
     return snake_head_pos.x == food_pos.x && snake_head_pos.y == food_pos.y;
 }
 
-void update_direction(int *dx, int *dy, const int ch) 
+void update_direction(int *dx, int *dy, const int ch, const snake_buffer_t *sb) 
 {
-    switch (ch) {
-        case 'w':
-        case KEY_UP:
-            *dx = 0;
-            *dy = -1;
-            break;
-        case 'a':
-        case KEY_LEFT:
-            *dx = -1;
-            *dy = 0;
-            break;
-        case 's':
-        case KEY_DOWN:
-            *dx = 0;
-            *dy = 1;
-            break;
-        case 'd':
-        case KEY_RIGHT:
-            *dx = 1;
-            *dy = 0;
-            break;
-        default:
-            break;
+    if ((ch == 'w' || ch == KEY_UP) && !(sb_get_size(sb) > 1 && GOING_DOWN)) {
+        *dx = 0;
+        *dy = -1;
+    }
+    else if ((ch == 'a' || ch == KEY_LEFT) && !(sb_get_size(sb) > 1 && GOING_RIGHT)) {
+        *dx = -1;
+        *dy = 0;
+    }
+    else if ((ch == 's' || ch == KEY_DOWN) && !(sb_get_size(sb) > 1 && GOING_UP)) {
+        *dx = 0;
+        *dy = 1;
+    }
+    else if ((ch == 'd' || ch == KEY_RIGHT) && !(sb_get_size(sb) > 1 && GOING_LEFT)) {
+        *dx = 1;
+        *dy = 0;
     }
 }
 
@@ -120,7 +117,7 @@ int main(void)
     while (1) {
         ch = getch();
         if (ch != ERR) {
-            update_direction(&dx, &dy, ch);
+            update_direction(&dx, &dy, ch, &sb);
         }
         move_snake(&sb, &prev_tail_pos, &prev_tail_index, dx, dy);
         coordinate_t snake_head_pos;

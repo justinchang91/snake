@@ -42,3 +42,11 @@ int sb_eat(snake_buffer_t *sb, coordinate_t prev_tail_pos, int prev_tail_index)
     sb->tail = prev_tail_index;
     return 1;
 }
+
+int sb_get_size(const snake_buffer_t *sb) {
+    int count = 0;
+    for (int i = sb->tail; i != sb->head; i = (i + 1) % RB_SIZE) {
+        count++;
+    }
+    return count;
+}
