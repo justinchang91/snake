@@ -2,7 +2,7 @@
 
 int sb_put_head(snake_buffer_t *sb, coordinate_t pos) 
 {
-    int next = (sb->head + 1) & (RB_SIZE-1);
+    int next = (sb->head + 1) % RB_SIZE;
     if (next == sb->tail) {
         return 0;
     }

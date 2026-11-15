@@ -13,6 +13,8 @@
 #define GOING_LEFT (*dx == -1 && *dy == 0)
 #define GOING_RIGHT (*dx == 1 && *dy == 0)
 
+_Static_assert(NUMROWS * NUMCOLS < RB_SIZE, "RB_SIZE too small for board");
+
 int is_snake(const snake_buffer_t *sb, const int x, const int y) 
 {
     for (int i = sb->tail; i != sb->head; i = (i + 1) % RB_SIZE) {
