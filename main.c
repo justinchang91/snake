@@ -1,15 +1,19 @@
 #include <ncurses.h>
 #include <unistd.h>
+#include "ring_buffer.h"
 
 #define NUMROWS 10
 #define NUMCOLS 10
 
-void print_board(int snake_pos_x, int snake_pos_y)
+void print_board(int snake_pos_x, int snake_pos_y, int food_pos_x, int food_pos_y)
 {
     for (int r = 0; r < NUMROWS; r++) {
         for (int c = 0; c < NUMCOLS; c++) {
             if (r == snake_pos_y && c == snake_pos_x) {
                 printw("@ ");
+            }
+            else if (r == food_pos_y && c == food_pos_x) {
+                printw("* ");
             }
             else {
                 printw(". ");
@@ -53,15 +57,25 @@ void update_direction(int *dx, int *dy, int ch)
     }
 }
 
-void move_snake(int *snake_pos_x, int *snake_pos_y, int dx, int dy)
+void move_snake(snake_buffer_t *sb, int dx, int dy)
 {
-    *snake_pos_x += dx;
-    *snake_pos_y += dy;
+    // Use the ring buffer
+    // When snake moves, it's a put for the new head coordinate, followed by a get for the tail
+    coordinate_t head_pos;
+    sb_peek_head(sb, &head_pos);
+    coordinate_t next_head_pos = {.x=head_pos.x + dx, .y=head_pos.y + dy};
+    sb_put(sb, next_head_pos);
+    coordinate_t tail_pos;
+    sb_get(sb, &tail_pos);
 }
 
 int main(void)
 {
-    int snake_pos_x = 5, snake_pos_y = 5;
+    coordinate_t start_head_pos = {.x=5, .y=5};
+    snake_buffer_t sb = {.head=0, .tail=0};
+    sb_put(&sb, start_head_pos);
+
+    int food_pos_x = 8, food_pos_y = 8;
     int dx = 0, dy = 0;
     int ch;
 
@@ -76,12 +90,14 @@ int main(void)
         if (ch != ERR) {
             update_direction(&dx, &dy, ch);
         }
-        move_snake(&snake_pos_x, &snake_pos_y, dx, dy);
-        if (!in_bounds(snake_pos_x, snake_pos_y)) {
+        move_snake(&sb, dx, dy);
+        coordinate_t snake_head_pos;
+        sb_peek_head(&sb, &snake_head_pos);
+        if (!in_bounds(snake_head_pos.x, snake_head_pos.y)) {
             break;
         }
         move(0, 0);  // Reset the cursor to top left
-        print_board(snake_pos_x, snake_pos_y);
+        print_board(snake_head_pos.x, snake_head_pos.y, food_pos_x, food_pos_y);
         usleep(200000);
     }
 
