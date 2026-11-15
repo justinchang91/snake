@@ -90,10 +90,12 @@ void update_direction(int *dx, int *dy, const int ch, const snake_buffer_t *sb)
     }
 }
 
-void update_food_pos(coordinate_t *food_pos) 
+void update_food_pos(coordinate_t *food_pos, snake_buffer_t *sb) 
 {
-    food_pos->x = rand() % NUMCOLS;
-    food_pos->y = rand() % NUMROWS;
+    do {
+        food_pos->x = rand() % NUMCOLS;
+        food_pos->y = rand() % NUMROWS;
+    } while (is_snake(sb, food_pos->x, food_pos->y));
 }
 
 void move_snake(snake_buffer_t *sb, coordinate_t *prev_tail_pos, int *prev_tail_index, int dx, int dy)
@@ -117,7 +119,7 @@ int main(void)
 
     srand(time(NULL));
     coordinate_t food_pos;
-    update_food_pos(&food_pos);
+    update_food_pos(&food_pos, &sb);
 
     int dx = 0, dy = 0;
     int ch;
@@ -141,7 +143,7 @@ int main(void)
         }
         if (food_is_touched(snake_head_pos, food_pos)) {
             sb_eat(&sb, prev_tail_pos, prev_tail_index);
-            update_food_pos(&food_pos);
+            update_food_pos(&food_pos, &sb);
         }
         move(0, 0);  // Reset the cursor to top left
         print_board(&sb, food_pos);
