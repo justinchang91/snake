@@ -22,6 +22,20 @@ int is_snake(const snake_buffer_t *sb, const int x, const int y)
     return 0;
 }
 
+int snake_touching_body(const snake_buffer_t *sb, const coordinate_t snake_head_pos) 
+{
+    int count = 0;
+    for (int i = sb->tail; i != sb->head; i = (i + 1) % RB_SIZE) {
+        if (sb->buf[i].x == snake_head_pos.x && sb->buf[i].y == snake_head_pos.y) {
+            count++;
+            if (count == 2) {
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
 int is_food(const coordinate_t food_pos, const int x, const int y)
 {
     return (y == food_pos.y && x == food_pos.x);
@@ -122,7 +136,7 @@ int main(void)
         move_snake(&sb, &prev_tail_pos, &prev_tail_index, dx, dy);
         coordinate_t snake_head_pos;
         sb_peek_head(&sb, &snake_head_pos);
-        if (!in_bounds(snake_head_pos)) {
+        if (!in_bounds(snake_head_pos) || snake_touching_body(&sb, snake_head_pos)) {
             break;
         }
         if (food_is_touched(snake_head_pos, food_pos)) {
