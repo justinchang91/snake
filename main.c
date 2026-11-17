@@ -20,11 +20,6 @@ int is_snake(int occupancy_grid[NUMROWS][NUMCOLS], const int x, const int y)
     return occupancy_grid[y][x] == 1;
 }
 
-int snake_touching_body(const coordinate_t snake_head_pos, int occupancy_grid[NUMROWS][NUMCOLS], int *score) 
-{
-    return occupancy_grid[snake_head_pos.y][snake_head_pos.x] == 1 && *score < 1;  // This condition is fucking me. IT would be smarter to check the next one is 1 but the snake wouldn't be touching the body yet...
-}
-
 int is_food(const coordinate_t food_pos, const int x, const int y)
 {
     return (y == food_pos.y && x == food_pos.x);
@@ -104,13 +99,13 @@ void update_food_pos(coordinate_t *food_pos, int occupancy_grid[NUMROWS][NUMCOLS
     } while (is_snake(occupancy_grid, food_pos->x, food_pos->y));
 }
 
-int move_snake(snake_buffer_t *sb, coordinate_t *prev_tail_pos, int *prev_tail_index, int dx, int dy, int occupancy_grid[NUMROWS][NUMCOLS], coordinate_t *food_pos, int *score)
+int move_snake(snake_buffer_t *sb, coordinate_t *prev_tail_pos, int dx, int dy, int occupancy_grid[NUMROWS][NUMCOLS], coordinate_t *food_pos, int *score)
 {
     coordinate_t head_pos;
     sb_peek_head(sb, &head_pos);
     coordinate_t next_head_pos = {.x=head_pos.x + dx, .y=head_pos.y + dy};
 
-    if (occupancy_grid[next_head_pos.y][next_head_pos.x] == 1 || !in_bounds(next_head_pos)) {
+    if (!in_bounds(next_head_pos) || occupancy_grid[next_head_pos.y][next_head_pos.x] == 1) {
         return 0;
     }
     sb_put_head(sb, next_head_pos);
@@ -124,7 +119,7 @@ int move_snake(snake_buffer_t *sb, coordinate_t *prev_tail_pos, int *prev_tail_i
     }
     else {
         // Only shift tail if we don't eat
-        sb_get_tail(sb, prev_tail_pos, prev_tail_index);
+        sb_get_tail(sb, prev_tail_pos);
         occupancy_grid[prev_tail_pos->y][prev_tail_pos->x] = 0;
     }
 
@@ -136,7 +131,6 @@ int main(void)
     coordinate_t start_head_pos = {.x=NUMCOLS / 2, .y=NUMROWS / 2};
     snake_buffer_t sb = {.head=0, .tail=0};
     coordinate_t prev_tail_pos;
-    int prev_tail_index = sb.tail;
     sb_put_head(&sb, start_head_pos);
 
     int occupancy_grid[NUMROWS][NUMCOLS] = {0};
@@ -149,7 +143,7 @@ int main(void)
     int dx = 0, dy = 0;
     int ch;
     int score = 0;
-    int gameStarted = 0;
+    int game_started = 0;
 
     initscr();
     cbreak();
@@ -161,9 +155,9 @@ int main(void)
     while (score < MAX_SCORE) {
         ch = getch();
         if (ch != ERR) {
-            update_direction(&dx, &dy, ch, &sb, &gameStarted);
+            update_direction(&dx, &dy, ch, &sb, &game_started);
         }
-        if (gameStarted && !move_snake(&sb, &prev_tail_pos, &prev_tail_index, dx, dy, occupancy_grid, &food_pos, &score)) {
+        if (game_started && !move_snake(&sb, &prev_tail_pos, dx, dy, occupancy_grid, &food_pos, &score)) {
             break;
         }
         print_score(&score);

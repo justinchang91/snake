@@ -5,9 +5,9 @@
 - Get: take at T, shfit T (if T < H)
 - Shift: index = (index + 1) % SIZE or index = (index + 1) & (SIZE - 1) 
 */
-#define RB_SIZE 128 // Grid is 10x10 so next power of 2 is 128
+#define RB_SIZE 128
 
-/* Storing coordinates X, Y which are both uint8_t */
+/* Storing coordinates X, Y*/
 typedef struct {
     int x;
     int y;
@@ -20,6 +20,6 @@ typedef struct {
 } snake_buffer_t;
 
 int sb_put_head(snake_buffer_t *sb, coordinate_t pos);
-int sb_get_tail(snake_buffer_t *sb, coordinate_t *prev_tail_pos, int *prev_tail_index) ;
+int sb_get_tail(snake_buffer_t *sb, coordinate_t *prev_tail_pos) ;
 int sb_peek_head(const snake_buffer_t *sb, coordinate_t *pos);
 int sb_get_size(const snake_buffer_t *sb);

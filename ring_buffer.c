@@ -11,14 +11,13 @@ int sb_put_head(snake_buffer_t *sb, coordinate_t pos)
     return 1;
 }
 
-int sb_get_tail(snake_buffer_t *sb, coordinate_t *prev_tail_pos, int *prev_tail_index) 
+int sb_get_tail(snake_buffer_t *sb, coordinate_t *prev_tail_pos) 
 {
     int next = (sb->tail + 1) % RB_SIZE;
     if (sb->tail == sb->head) {
         return 0;
     }
     *prev_tail_pos = sb->buf[sb->tail];
-    *prev_tail_index = sb->tail;
     sb->tail = next;
     return 1;
 }
