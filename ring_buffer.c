@@ -33,16 +33,6 @@ int sb_peek_head(const snake_buffer_t *sb, coordinate_t *pos)
     return 1;
 }
 
-int sb_eat(snake_buffer_t *sb, coordinate_t prev_tail_pos, int prev_tail_index) 
-{
-    if (prev_tail_index == sb->head) {
-        return 0;
-    }
-    sb->buf[prev_tail_index] = prev_tail_pos;
-    sb->tail = prev_tail_index;
-    return 1;
-}
-
 int sb_get_size(const snake_buffer_t *sb) {
     int count = 0;
     for (int i = sb->tail; i != sb->head; i = (i + 1) % RB_SIZE) {
