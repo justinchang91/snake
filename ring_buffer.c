@@ -33,9 +33,12 @@ int sb_peek_head(const snake_buffer_t *sb, coordinate_t *pos)
 }
 
 int sb_get_size(const snake_buffer_t *sb) {
-    int count = 0;
-    for (int i = sb->tail; i != sb->head; i = (i + 1) % RB_SIZE) {
-        count++;
-    }
-    return count;
+    return (sb->head - sb->tail + RB_SIZE) % RB_SIZE;
 }
+
+// Two cases. In both cases, we try to calculate the distance from tail to head:
+// 1. H > T -> head - tail
+// 2. H < T -> RB_SIZE - tail + head -> rearrage to head - tail + RB_SIZE -> this result must be less than RB_SIZE
+// To combine these two cases, do (head - tail + RB_SIZE) % RB_SIZE
+// For case 1, you basically do + RB_SIZE - RB_SIZE to get back to head - tail
+// For case 2, since head - tail + RB_SIZE is less than RB_SIZE, the % RB_SIZE does nothing
