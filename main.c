@@ -44,12 +44,12 @@ void print_board(int occupancy_grid[NUMROWS][NUMCOLS], const coordinate_t food_p
     }
 }
 
-void print_score(int *score) {
-    mvprintw(NUMROWS + 1, 0, "Score: %d", *score);
+void print_score(int score) {
+    mvprintw(NUMROWS + 1, 0, "Score: %d", score);
 }
 
-void print_game_over(int *score) {
-    if (*score == MAX_SCORE) {
+void print_game_over(int score) {
+    if (score == MAX_SCORE) {
         mvprintw(NUMROWS + 2, 0, "You won! Press any key to exit.");
     } else {
         mvprintw(NUMROWS + 2, 0, "Game over! Press any key to exit.");
@@ -99,7 +99,7 @@ void update_food_pos(coordinate_t *food_pos, int occupancy_grid[NUMROWS][NUMCOLS
     } while (is_snake(occupancy_grid, food_pos->x, food_pos->y));
 }
 
-int move_snake(snake_buffer_t *sb, coordinate_t *prev_tail_pos, int dx, int dy, int occupancy_grid[NUMROWS][NUMCOLS], coordinate_t *food_pos, int *score)
+int move_snake(snake_buffer_t *sb, int dx, int dy, int occupancy_grid[NUMROWS][NUMCOLS], coordinate_t *food_pos, int *score)
 {
     coordinate_t head_pos;
     sb_peek_head(sb, &head_pos);
@@ -119,8 +119,9 @@ int move_snake(snake_buffer_t *sb, coordinate_t *prev_tail_pos, int dx, int dy, 
     }
     else {
         // Only shift tail if we don't eat
-        sb_get_tail(sb, prev_tail_pos);
-        occupancy_grid[prev_tail_pos->y][prev_tail_pos->x] = 0;
+        coordinate_t prev_tail_pos;
+        sb_get_tail(sb, &prev_tail_pos);
+        occupancy_grid[prev_tail_pos.y][prev_tail_pos.x] = 0;
     }
 
     return 1;
@@ -130,7 +131,6 @@ int main(void)
 {
     coordinate_t start_head_pos = {.x=NUMCOLS / 2, .y=NUMROWS / 2};
     snake_buffer_t sb = {.head=0, .tail=0};
-    coordinate_t prev_tail_pos;
     sb_put_head(&sb, start_head_pos);
 
     int occupancy_grid[NUMROWS][NUMCOLS] = {0};
@@ -157,16 +157,16 @@ int main(void)
         if (ch != ERR) {
             update_direction(&dx, &dy, ch, &sb, &game_started);
         }
-        if (game_started && !move_snake(&sb, &prev_tail_pos, dx, dy, occupancy_grid, &food_pos, &score)) {
+        if (game_started && !move_snake(&sb, dx, dy, occupancy_grid, &food_pos, &score)) {
             break;
         }
-        print_score(&score);
+        print_score(score);
         print_board(occupancy_grid, food_pos);
         refresh();
         usleep(200000);
     }
 
-    print_game_over(&score);
+    print_game_over(score);
     refresh();
 
     timeout(-1);
