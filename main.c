@@ -15,9 +15,14 @@
 
 _Static_assert(NUMROWS * NUMCOLS < RB_SIZE, "RB_SIZE too small for board");
 
+typedef struct {
+    coordinate_t buf[MAX_SCORE];
+    int size;
+} available_cells_t;
+
 int is_snake(int occupancy_grid[NUMROWS][NUMCOLS], const int x, const int y) 
 {
-    return occupancy_grid[y][x] == 1;
+    return occupancy_grid[y][x] == -1;
 }
 
 int is_food(const coordinate_t food_pos, const int x, const int y)
@@ -91,37 +96,47 @@ void update_direction(int *dx, int *dy, const int ch, const snake_buffer_t *sb, 
     }
 }
 
-void update_food_pos(coordinate_t *food_pos, int occupancy_grid[NUMROWS][NUMCOLS]) 
+void update_food_pos(coordinate_t *food_pos, available_cells_t *available_cells) 
 {
-    do {
-        food_pos->x = rand() % NUMCOLS;
-        food_pos->y = rand() % NUMROWS;
-    } while (is_snake(occupancy_grid, food_pos->x, food_pos->y));
+    int chosen_index = rand() % available_cells->size;
+    food_pos->x = available_cells->buf[chosen_index].x;
+    food_pos->y = available_cells->buf[chosen_index].y;
+
+    // available_cells->buf[chosen_index] = *(available_cells->tail);
+    // available_cells->tail--;
+    // available_cells->size--;
 }
 
-int move_snake(snake_buffer_t *sb, int dx, int dy, int occupancy_grid[NUMROWS][NUMCOLS], coordinate_t *food_pos, int *score)
+int move_snake(snake_buffer_t *sb, int dx, int dy, int occupancy_grid[NUMROWS][NUMCOLS], coordinate_t *food_pos, int *score, available_cells_t *available_cells)
 {
     coordinate_t head_pos;
     sb_peek_head(sb, &head_pos);
     coordinate_t next_head_pos = {.x=head_pos.x + dx, .y=head_pos.y + dy};
 
-    if (!in_bounds(next_head_pos) || occupancy_grid[next_head_pos.y][next_head_pos.x] == 1) {
+    if (!in_bounds(next_head_pos) || occupancy_grid[next_head_pos.y][next_head_pos.x] == -1) {
         return 0;
     }
     sb_put_head(sb, next_head_pos);
-    occupancy_grid[next_head_pos.y][next_head_pos.x] = 1;
+    int index_in_available_cells = occupancy_grid[next_head_pos.y][next_head_pos.x];
+    coordinate_t available_cells_tail = available_cells->buf[available_cells->size - 1];
+    available_cells->buf[index_in_available_cells] = available_cells_tail;  
+    occupancy_grid[available_cells_tail.y][available_cells_tail.x] = index_in_available_cells;
+    available_cells->size--;
+    occupancy_grid[next_head_pos.y][next_head_pos.x] = -1; // Cell is no longer available
 
     if (food_is_touched(next_head_pos, *food_pos)) {
         (*score)++;
         if (*score < MAX_SCORE) {
-            update_food_pos(food_pos, occupancy_grid);
+            update_food_pos(food_pos, available_cells);
         }
     }
     else {
         // Only shift tail if we don't eat
         coordinate_t prev_tail_pos;
         sb_get_tail(sb, &prev_tail_pos);
-        occupancy_grid[prev_tail_pos.y][prev_tail_pos.x] = 0;
+        available_cells->buf[available_cells->size] = prev_tail_pos;  // put the prev_tail_pos at the tail of available cells
+        available_cells->size++;
+        occupancy_grid[prev_tail_pos.y][prev_tail_pos.x] = available_cells->size - 1;
     }
 
     return 1;
@@ -134,11 +149,25 @@ int main(void)
     sb_put_head(&sb, start_head_pos);
 
     int occupancy_grid[NUMROWS][NUMCOLS] = {0};
-    occupancy_grid[start_head_pos.y][start_head_pos.x] = 1;  // 1 = occupied by snake
+    occupancy_grid[start_head_pos.y][start_head_pos.x] = -1;  // -1 = occupied by snake
+
+    available_cells_t available_cells;
+    available_cells.size = 0;
+    for (int r = 0; r < NUMROWS; r++) {
+        for (int c = 0; c < NUMCOLS; c++) {
+            if (occupancy_grid[r][c] == -1) {
+                continue;
+            }
+            coordinate_t coordinate = {.x=c, .y=r};
+            available_cells.buf[available_cells.size] = coordinate;
+            occupancy_grid[r][c] = available_cells.size;
+            available_cells.size++;
+        }
+    }
 
     srand(time(NULL));
     coordinate_t food_pos;
-    update_food_pos(&food_pos, occupancy_grid);
+    update_food_pos(&food_pos, &available_cells);
 
     int dx = 0, dy = 0;
     int ch;
@@ -157,7 +186,7 @@ int main(void)
         if (ch != ERR) {
             update_direction(&dx, &dy, ch, &sb, &game_started);
         }
-        if (game_started && !move_snake(&sb, dx, dy, occupancy_grid, &food_pos, &score)) {
+        if (game_started && !move_snake(&sb, dx, dy, occupancy_grid, &food_pos, &score, &available_cells)) {
             break;
         }
         print_score(score);
