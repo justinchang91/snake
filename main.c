@@ -20,6 +20,37 @@ typedef struct {
     int size;
 } available_cells_t;
 
+void init_available_cells(available_cells_t *available_cells, int occupancy_grid[NUMROWS][NUMCOLS]) 
+{
+    available_cells->size = 0;
+    for (int r = 0; r < NUMROWS; r++) {
+        for (int c = 0; c < NUMCOLS; c++) {
+            if (occupancy_grid[r][c] == -1) {
+                continue;
+            }
+            coordinate_t coordinate = {.x=c, .y=r};
+            available_cells->buf[available_cells->size] = coordinate;
+            occupancy_grid[r][c] = available_cells->size;
+            available_cells->size++;
+        }
+    }
+}
+
+void make_cell_not_available(available_cells_t *available_cells, int occupancy_grid[NUMROWS][NUMCOLS], coordinate_t position) {
+    int index_in_available_cells = occupancy_grid[position.y][position.x];
+    coordinate_t available_cells_tail = available_cells->buf[available_cells->size - 1];
+    available_cells->buf[index_in_available_cells] = available_cells_tail;  
+    occupancy_grid[available_cells_tail.y][available_cells_tail.x] = index_in_available_cells;
+    available_cells->size--;
+    occupancy_grid[position.y][position.x] = -1; // Cell is no longer available
+}
+
+void make_cell_available(available_cells_t *available_cells, int occupancy_grid[NUMROWS][NUMCOLS], coordinate_t position) {
+    available_cells->buf[available_cells->size] = position;
+    available_cells->size++;
+    occupancy_grid[position.y][position.x] = available_cells->size - 1;
+}
+
 int is_snake(int occupancy_grid[NUMROWS][NUMCOLS], const int x, const int y) 
 {
     return occupancy_grid[y][x] == -1;
@@ -101,10 +132,6 @@ void update_food_pos(coordinate_t *food_pos, available_cells_t *available_cells)
     int chosen_index = rand() % available_cells->size;
     food_pos->x = available_cells->buf[chosen_index].x;
     food_pos->y = available_cells->buf[chosen_index].y;
-
-    // available_cells->buf[chosen_index] = *(available_cells->tail);
-    // available_cells->tail--;
-    // available_cells->size--;
 }
 
 int move_snake(snake_buffer_t *sb, int dx, int dy, int occupancy_grid[NUMROWS][NUMCOLS], coordinate_t *food_pos, int *score, available_cells_t *available_cells)
@@ -117,12 +144,7 @@ int move_snake(snake_buffer_t *sb, int dx, int dy, int occupancy_grid[NUMROWS][N
         return 0;
     }
     sb_put_head(sb, next_head_pos);
-    int index_in_available_cells = occupancy_grid[next_head_pos.y][next_head_pos.x];
-    coordinate_t available_cells_tail = available_cells->buf[available_cells->size - 1];
-    available_cells->buf[index_in_available_cells] = available_cells_tail;  
-    occupancy_grid[available_cells_tail.y][available_cells_tail.x] = index_in_available_cells;
-    available_cells->size--;
-    occupancy_grid[next_head_pos.y][next_head_pos.x] = -1; // Cell is no longer available
+    make_cell_not_available(available_cells, occupancy_grid, next_head_pos);
 
     if (food_is_touched(next_head_pos, *food_pos)) {
         (*score)++;
@@ -134,9 +156,7 @@ int move_snake(snake_buffer_t *sb, int dx, int dy, int occupancy_grid[NUMROWS][N
         // Only shift tail if we don't eat
         coordinate_t prev_tail_pos;
         sb_get_tail(sb, &prev_tail_pos);
-        available_cells->buf[available_cells->size] = prev_tail_pos;  // put the prev_tail_pos at the tail of available cells
-        available_cells->size++;
-        occupancy_grid[prev_tail_pos.y][prev_tail_pos.x] = available_cells->size - 1;
+        make_cell_available(available_cells, occupancy_grid, prev_tail_pos);
     }
 
     return 1;
@@ -152,18 +172,7 @@ int main(void)
     occupancy_grid[start_head_pos.y][start_head_pos.x] = -1;  // -1 = occupied by snake
 
     available_cells_t available_cells;
-    available_cells.size = 0;
-    for (int r = 0; r < NUMROWS; r++) {
-        for (int c = 0; c < NUMCOLS; c++) {
-            if (occupancy_grid[r][c] == -1) {
-                continue;
-            }
-            coordinate_t coordinate = {.x=c, .y=r};
-            available_cells.buf[available_cells.size] = coordinate;
-            occupancy_grid[r][c] = available_cells.size;
-            available_cells.size++;
-        }
-    }
+    init_available_cells(&available_cells, occupancy_grid);
 
     srand(time(NULL));
     coordinate_t food_pos;
