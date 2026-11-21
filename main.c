@@ -153,29 +153,29 @@ void update_direction(coordinate_t *direction, const int ch, const snake_buffer_
     }
 }
 
-int move_snake(snake_buffer_t *sb, coordinate_t direction, int occupancy_grid[NUMROWS][NUMCOLS], coordinate_t *food_pos, int *score, available_cells_t *available_cells)
+int move_snake(game_t *game)
 {
     coordinate_t head_pos;
-    sb_peek_head(sb, &head_pos);
-    coordinate_t next_head_pos = {.x=head_pos.x + direction.x, .y=head_pos.y + direction.y};
+    sb_peek_head(&game->sb, &head_pos);
+    coordinate_t next_head_pos = {.x=head_pos.x + game->direction.x, .y=head_pos.y + game->direction.y};
 
-    if (!in_bounds(next_head_pos) || occupancy_grid[next_head_pos.y][next_head_pos.x] == OCCUPIED) {
+    if (!in_bounds(next_head_pos) || game->occupancy_grid[next_head_pos.y][next_head_pos.x] == OCCUPIED) {
         return 0;
     }
-    sb_put_head(sb, next_head_pos);
-    make_cell_not_available(available_cells, occupancy_grid, next_head_pos);
+    sb_put_head(&game->sb, next_head_pos);
+    make_cell_not_available(&game->available_cells, game->occupancy_grid, next_head_pos);
 
-    if (food_is_touched(next_head_pos, *food_pos)) {
-        (*score)++;
-        if (*score < MAX_SCORE) {
-            update_food_pos(food_pos, available_cells);
+    if (food_is_touched(next_head_pos, game->food_pos)) {
+        (game->score)++;
+        if (game->score < MAX_SCORE) {
+            update_food_pos(&game->food_pos, &game->available_cells);
         }
     }
     else {
         // Only shift tail if we don't eat
         coordinate_t prev_tail_pos;
-        sb_get_tail(sb, &prev_tail_pos);
-        make_cell_available(available_cells, occupancy_grid, prev_tail_pos);
+        sb_get_tail(&game->sb, &prev_tail_pos);
+        make_cell_available(&game->available_cells, game->occupancy_grid, prev_tail_pos);
     }
 
     return 1;
@@ -188,7 +188,7 @@ void run_game(game_t *game)
         if (ch != ERR) {
             update_direction(&game->direction, ch, &game->sb, &game->game_started);
         }
-        if (game->game_started && !move_snake(&game->sb, game->direction, game->occupancy_grid, &game->food_pos, &game->score, &game->available_cells)) {
+        if (game->game_started && !move_snake(&game)) {
             break;
         }
         print_score(game->score);
